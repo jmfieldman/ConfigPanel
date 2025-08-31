@@ -6,7 +6,16 @@
 import CombineEx
 import Foundation
 
-public final class ConfigItem<Output: Codable & Equatable, ConfigInput>: PropertyProtocol {
+public protocol ConfigProviding<Output>: PropertyProtocol {
+    associatedtype Output
+}
+
+protocol ConfigInputIngesting<ConfigInput> {
+    associatedtype ConfigInput
+    func registerConfigItemProperty(_ configProperty: any PropertyProtocol<ConfigInput?>)
+}
+
+public final class ConfigItem<Output: Codable & Equatable, ConfigInput>: ConfigProviding, ConfigInputIngesting {
     private var internalProperty: LazyContainer<Property<Output>>?
     private let defaultValue: Output
     private let tweak: Tweak<Output>?
@@ -26,7 +35,7 @@ public final class ConfigItem<Output: Codable & Equatable, ConfigInput>: Propert
         }
     }
 
-    func registerConfigProperty(_ configProperty: any PropertyProtocol<ConfigInput?>) {
+    func registerConfigItemProperty(_ configProperty: any PropertyProtocol<ConfigInput?>) {
         self.configProperty = configProperty
     }
 
