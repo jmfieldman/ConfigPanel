@@ -5,23 +5,20 @@
 
 import CombineEx
 
-public final class Tweak<Output: Codable>: PropertyProtocol {
-    let internalProperty: Property<Output>
+public final class Tweak<Output: Codable> {
+    let internalProperty: PersistentProperty<TweakState<Output>>
     let coordinate: TweakCoordinate
+    let type: TweakType<Output>
 
     public init(
         coordinate: TweakCoordinate,
-        default: Output
+        type: TweakType<Output>
     ) {
         self.coordinate = coordinate
-        self.internalProperty = .init(value: `default`)
+        self.type = type
+        self.internalProperty = TweakRepository.shared.register(
+            coordinate: coordinate,
+            tweakType: type
+        )
     }
-}
-
-public extension Tweak {
-    var value: Output {
-        internalProperty.value
-    }
-
-    func receive<S>(subscriber: S) where S: Subscriber, Never == S.Failure, Output == S.Input {}
 }

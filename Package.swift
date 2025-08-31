@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "ConfigPanel",
-    platforms: [.iOS(.v16), .macOS(.v14), .tvOS(.v17), .watchOS(.v7)],
+    platforms: [.iOS(.v16)],
     products: [
         .library(name: "ConfigPanel", targets: ["ConfigPanel"]),
     ],
