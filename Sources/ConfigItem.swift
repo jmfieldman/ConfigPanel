@@ -1,5 +1,5 @@
 //
-//  ConfigProvider.swift
+//  ConfigItem.swift
 //  Copyright © 2025 Jason Fieldman.
 //
 
