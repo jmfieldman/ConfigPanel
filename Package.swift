@@ -14,7 +14,9 @@ let package = Package(
     targets: [
         .target(
             name: "ConfigPanel",
-            dependencies: [],
+            dependencies: [
+                .product(name: "CombineEx", package: "CombineEx"),
+            ],
             path: "Sources"
         ),
         .testTarget(
