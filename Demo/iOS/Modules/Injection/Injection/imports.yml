@@ -1,1 +1,7 @@
+- ConfigRefreshManager
+- ConfigRefreshManagerImpl
+- FeatureOneConfigManager
+- FeatureOneConfigManagerImpl
+- FeatureTwoConfigManager
+- FeatureTwoConfigManagerImpl
 - Inject

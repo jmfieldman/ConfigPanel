@@ -5,3 +5,5 @@ dependencies:
     from: 0.0.2
   - url: https://github.com/jmfieldman/Mortar
     from: 3.0.4
+projectPackages:
+  - name: ConfigPanel

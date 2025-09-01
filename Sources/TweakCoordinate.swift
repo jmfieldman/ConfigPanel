@@ -8,10 +8,18 @@ import CombineEx
 public struct TweakCoordinate: Hashable, Sendable {
     public struct Table: Hashable, Sendable {
         public let table: String
+
+        public init(_ table: String) {
+            self.table = table
+        }
     }
 
     public struct Section: Hashable, Sendable {
         public let section: String
+
+        public init(_ section: String) {
+            self.section = section
+        }
     }
 
     public let table: Table

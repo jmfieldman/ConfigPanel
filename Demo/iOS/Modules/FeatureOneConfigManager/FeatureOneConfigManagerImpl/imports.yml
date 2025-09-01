@@ -1,7 +1,5 @@
 - CombineEx
+- ConfigPanel
 - ConfigRefreshManager
 - FeatureOneConfigManager
-- FeatureTwoConfigManager
 - Inject
-- Mortar
-- UIKit

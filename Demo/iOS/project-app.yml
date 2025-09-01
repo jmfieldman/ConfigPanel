@@ -19,6 +19,10 @@ targets:
       # These templates are generated in project-modules.yml and project-dependencies.yml
       - ModuleInclusionTemplate
       - PackageInclusionTemplate
+    dependencies:
+    - package: ConfigPanel
+      products:
+      - ConfigPanel
 
 packages:
   ConfigPanel:
