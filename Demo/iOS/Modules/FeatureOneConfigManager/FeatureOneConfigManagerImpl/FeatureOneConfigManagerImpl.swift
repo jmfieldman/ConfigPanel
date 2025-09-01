@@ -3,6 +3,7 @@
 //  Copyright © 2025 Jason Fieldman.
 //
 
+import CombineEx
 import ConfigPanel
 import ConfigRefreshManager
 import FeatureOneConfigManager

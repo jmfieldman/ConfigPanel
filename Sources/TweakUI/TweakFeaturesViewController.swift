@@ -116,26 +116,30 @@ extension TweakFeaturesViewController: UITableViewDataSource, UITableViewDelegat
 
 // MARK: - Cell Implementations
 
+// swiftformat:disable opaqueGenericParameters
+
 private class ToggleTableViewCell: UITableViewCell {
-    func configure(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<some Any>) {
+    func configure<T>(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<T>) {
         textLabel?.text = coordinate.row
         detailTextLabel?.text = "Toggle"
     }
 }
 
 private class FreeformTableViewCell: UITableViewCell {
-    func configure(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<some Any>) {
+    func configure<T>(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<T>) {
         textLabel?.text = coordinate.row
         detailTextLabel?.text = "Freeform"
     }
 }
 
 private class SelectionTableViewCell: UITableViewCell {
-    func configure(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<some Any>) {
+    func configure<T>(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<T>) {
         textLabel?.text = coordinate.row
         detailTextLabel?.text = "Selection"
     }
 }
+
+// swiftformat:enable opaqueGenericParameters
 
 extension TweakRepository.NodeProviding {
     func dequeueTableViewCell(in tableView: UITableView, indexPath: IndexPath) -> UITableViewCell {

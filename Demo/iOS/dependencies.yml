@@ -4,6 +4,6 @@ dependencies:
   - url: https://github.com/jmfieldman/Inject
     from: 0.0.2
   - url: https://github.com/jmfieldman/Mortar
-    from: 3.0.4
+    from: 3.0.5
 projectPackages:
   - name: ConfigPanel
