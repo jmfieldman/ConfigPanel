@@ -19,14 +19,14 @@ final class TweakRepository {
     let accessQueue = DispatchQueue(label: "TweakRepository.accessQueue")
 
     protocol NodeProviding<Output> {
-        associatedtype Output: Codable
+        associatedtype Output: Codable & Equatable
         var coordinate: TweakCoordinate { get }
         var tweakType: TweakType<Output> { get }
         var persistentProperty: PersistentProperty<TweakState<Output>> { get }
         var outputIdentifier: ObjectIdentifier { get }
     }
 
-    final class Node<Output: Codable>: NodeProviding {
+    final class Node<Output: Codable & Equatable>: NodeProviding {
         let coordinate: TweakCoordinate
         let tweakType: TweakType<Output>
         let persistentProperty: PersistentProperty<TweakState<Output>>
@@ -43,13 +43,13 @@ final class TweakRepository {
                 key: coordinate.propertyKey,
                 defaultValue: TweakState(
                     value: tweakType.defaultValue(),
-                    enabled: false
+                    enabled: !tweakType.hasDisableState()
                 )
             )
         }
     }
 
-    func register<Output: Codable>(
+    func register<Output: Codable & Equatable>(
         coordinate: TweakCoordinate,
         tweakType: TweakType<Output>
     ) -> PersistentProperty<TweakState<Output>> {

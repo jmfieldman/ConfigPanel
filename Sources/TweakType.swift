@@ -24,6 +24,15 @@ public enum TweakType<Output: Codable> {
             options[defaultIndex].1
         }
     }
+
+    func hasDisableState() -> Bool {
+        switch self {
+        case .toggle:
+            false
+        case .freeform, .selection, .namedSelection, .segment:
+            true
+        }
+    }
 }
 
 public extension TweakType {

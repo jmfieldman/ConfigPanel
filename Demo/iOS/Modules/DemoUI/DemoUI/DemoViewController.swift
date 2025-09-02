@@ -25,6 +25,22 @@ public final class DemoViewController: UIViewController {
                 $0.layout.center == $0.parentLayout.center
 
                 UILabel {
+                    $0.text = "Feature One"
+                    $0.font = UIFont.boldSystemFont(ofSize: 17)
+                    $0.layout.height == 44
+                }
+
+                UILabel {
+                    $0.bind(\.text) <~ model.featureOneToggle.map { "Toggle Tweak: \($0)" }
+                }
+
+                UILabel {
+                    $0.text = "Feature Two"
+                    $0.font = UIFont.boldSystemFont(ofSize: 17)
+                    $0.layout.height == 44
+                }
+
+                UILabel {
                     $0.bind(\.text) <~ model.featureTwoInteger.map { "Integer: \($0)" }
                 }
 
@@ -45,6 +61,12 @@ public final class DemoViewController: UIViewController {
                         self?.navigationController?.pushViewController(TweakViewController(), animated: true)
                     }
                 }
+
+                UIButton {
+                    $0.setTitle("Delete Tweaks Directory", for: .normal)
+                    $0.setTitleColor(.orange, for: .normal)
+                    $0.handleEvents(.touchUpInside, model.deleteTweaksFileDir)
+                }
             }
         }
     }
@@ -64,6 +86,13 @@ private final class DemoViewControllerModel {
         configRefreshManager.incrementConfigStruct()
     }
 
+    lazy var deleteTweaksFileDir: Action<Void, Void, Never> = .immediate { [configRefreshManager] _ in
+        let documentDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let tweaksDir = documentDir.appendingPathComponent("_tweaks_")
+        try? FileManager.default.removeItem(at: tweaksDir)
+    }
+
+    lazy var featureOneToggle: Property<Bool> = Property(featureOneConfigManager.subContainer.configToggle)
     lazy var featureTwoInteger: Property<Int> = Property(featureTwoConfigManager.configInteger)
     lazy var featureTwoString: Property<String> = Property(featureTwoConfigManager.configString)
 }

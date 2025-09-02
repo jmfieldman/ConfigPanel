@@ -5,7 +5,7 @@
 
 import CombineEx
 
-public final class Tweak<Output: Codable> {
+public final class Tweak<Output: Codable & Equatable> {
     let internalProperty: PersistentProperty<TweakState<Output>>
     let coordinate: TweakCoordinate
     let type: TweakType<Output>

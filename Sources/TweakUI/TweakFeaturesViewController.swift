@@ -119,9 +119,16 @@ extension TweakFeaturesViewController: UITableViewDataSource, UITableViewDelegat
 // swiftformat:disable opaqueGenericParameters
 
 private class ToggleTableViewCell: UITableViewCell {
-    func configure<T>(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<T>) {
+    func configure<T: Codable & Equatable>(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<T>) {
         textLabel?.text = coordinate.row
-        detailTextLabel?.text = "Toggle"
+
+        let switchView = UISwitch()
+        let tweakState = node.persistentProperty.value
+        if case let .toggle(_, onValue, defaultValue) = node.tweakType {
+            let curToggle = tweakState.enabled ? (tweakState.value == onValue) : defaultValue
+            switchView.isOn = curToggle
+        }
+        accessoryView = switchView
     }
 }
 

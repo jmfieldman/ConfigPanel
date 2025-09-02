@@ -7,6 +7,7 @@ import CombineEx
 
 public protocol FeatureOneConfigSubContainer {
     var configStringThreed: any PropertyProtocol<String> { get }
+    var configToggle: any PropertyProtocol<Bool> { get }
 }
 
 public protocol FeatureOneConfigManager {
