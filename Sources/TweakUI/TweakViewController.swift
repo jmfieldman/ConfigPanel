@@ -26,10 +26,9 @@ public final class TweakViewController: UIViewController {
     }
 
     private func loadTableCoordinates() {
-        let allCoordinates = TweakRepository.shared.accessQueue.sync { Array(TweakRepository.shared.nodes.keys) }
-        let uniqueTables = Set(allCoordinates.map(\.table))
+        let uniqueTables = Set(TweakRepository.shared.allCoordinates().map(\.table))
         tableCoordinates = Array(uniqueTables).sorted { $0.table < $1.table }
-        DispatchQueue.main.async { self.tableView.reloadData() }
+        tableView.reloadData()
     }
 }
 

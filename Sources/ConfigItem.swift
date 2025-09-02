@@ -15,7 +15,7 @@ protocol ConfigInputIngesting<ConfigInput> {
     func registerConfigItemProperty(_ configProperty: any PropertyProtocol<ConfigInput?>)
 }
 
-public final class ConfigItem<Output: Codable & Equatable, ConfigInput>: ConfigProviding, ConfigInputIngesting {
+public final class ConfigItem<Output: TweakOutputType, ConfigInput>: ConfigProviding, ConfigInputIngesting {
     private var internalProperty: LazyContainer<Property<Output>>?
     private let defaultValue: Output
     private let tweak: Tweak<Output>?

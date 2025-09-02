@@ -4,11 +4,29 @@
 //
 
 public enum TweakType<Output: Codable> {
-    case toggle(off: Output, on: Output, toggleDefault: Bool)
-    case freeform(fromString: (String) -> Output, toString: (Output) -> String?, default: Output)
-    case selection(options: [Output], nameTransform: (Output) -> String, defaultIndex: Int)
-    case namedSelection(options: [(String, Output)], defaultIndex: Int)
-    case segment(options: [(String, Output)], defaultIndex: Int)
+    case toggle(
+        off: Output,
+        on: Output,
+        toggleDefaultOn: Bool = false
+    )
+
+    case freeform(
+        fromString: (String) -> Output,
+        toString: (Output) -> String?,
+        default: Output
+    )
+
+    case selection(
+        options: [Output],
+        required: Bool = false,
+        defaultIndex: Int? = nil
+    )
+
+    case namedSelection(
+        options: [(String, Output)],
+        required: Bool = false,
+        defaultIndex: Int? = nil
+    )
 
     func defaultValue() -> Output {
         switch self {
@@ -17,11 +35,9 @@ public enum TweakType<Output: Codable> {
         case let .freeform(_, _, defaultValue):
             defaultValue
         case let .selection(options, _, defaultIndex):
-            options[defaultIndex]
-        case let .namedSelection(options, defaultIndex):
-            options[defaultIndex].1
-        case let .segment(options, defaultIndex):
-            options[defaultIndex].1
+            options[defaultIndex ?? 0]
+        case let .namedSelection(options, _, defaultIndex):
+            options[defaultIndex ?? 0].1
         }
     }
 
@@ -29,22 +45,26 @@ public enum TweakType<Output: Codable> {
         switch self {
         case .toggle:
             false
-        case .freeform, .selection, .namedSelection, .segment:
+        case .freeform:
             true
+        case let .selection(_, required, _):
+            !required
+        case let .namedSelection(_, required, _):
+            !required
         }
     }
 }
 
 public extension TweakType {
-    static func boolToggle(default: Bool) -> TweakType<Bool> {
-        .toggle(off: false, on: true, toggleDefault: `default`)
+    static func boolToggle(defaultOn: Bool = false) -> TweakType<Bool> {
+        .toggle(off: false, on: true, toggleDefaultOn: defaultOn)
     }
 
     static func freeformString(default: String = "") -> TweakType<String> {
         .freeform(fromString: { $0 }, toString: { $0 }, default: `default`)
     }
 
-    static func freeformOptionalString(default: String? = nil) -> TweakType<String?> {
+    static func freeformString(default: String? = nil) -> TweakType<String?> {
         .freeform(fromString: { $0 }, toString: { $0 }, default: `default`)
     }
 
@@ -52,7 +72,7 @@ public extension TweakType {
         .freeform(fromString: { Int($0) ?? `default` }, toString: { "\($0)" }, default: `default`)
     }
 
-    static func freeformOptionalInt(default: Int? = nil) -> TweakType<Int?> {
+    static func freeformInt(default: Int? = nil) -> TweakType<Int?> {
         .freeform(fromString: { Int($0) ?? `default` }, toString: { ($0 ?? `default`).flatMap(\.description) }, default: `default`)
     }
 }

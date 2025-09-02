@@ -35,23 +35,14 @@ public final class TweakFeaturesViewController: UIViewController {
         tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         tableView.delegate = self
         tableView.dataSource = self
-
-        // Register different cell types based on tweak type
-        tableView.register(ToggleTableViewCell.self, forCellReuseIdentifier: "ToggleCell")
-        tableView.register(FreeformTableViewCell.self, forCellReuseIdentifier: "FreeformCell")
-        tableView.register(SelectionTableViewCell.self, forCellReuseIdentifier: "SelectionCell")
+        tableView.register(TweakTableViewCell.self, forCellReuseIdentifier: "TweakTableViewCell")
 
         view.addSubview(tableView)
     }
 
     private func loadTweaks() {
-        // Get all tweaks from the repository that belong to this table
-        let allCoordinates = TweakRepository.shared.accessQueue.sync {
-            Array(TweakRepository.shared.nodes.keys)
-        }
-
         // Filter coordinates by table
-        let tableCoordinates = allCoordinates.filter { $0.table == tableCoordinate }
+        let tableCoordinates = TweakRepository.shared.allCoordinates().filter { $0.table == tableCoordinate }
 
         // Group by section
         for coordinate in tableCoordinates {
@@ -67,9 +58,7 @@ public final class TweakFeaturesViewController: UIViewController {
             sections[section]?.sort { $0.row < $1.row }
         }
 
-        DispatchQueue.main.async {
-            self.tableView.reloadData()
-        }
+        tableView.reloadData()
     }
 }
 
@@ -104,13 +93,26 @@ extension TweakFeaturesViewController: UITableViewDataSource, UITableViewDelegat
         let coordinate = sectionRows[indexPath.row]
 
         // Get the node for this tweak
-        guard let node = TweakRepository.shared.accessQueue.sync(execute: {
-            TweakRepository.shared.nodes[coordinate]
-        }) else {
+        guard let node = TweakRepository.shared.node(for: coordinate) else {
             return UITableViewCell()
         }
 
         return node.dequeueTableViewCell(in: tableView, indexPath: indexPath)
+    }
+
+    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if let cell = tableView.cellForRow(at: indexPath) as? SelectableCell {
+            cell.didSelect()
+        }
+        tableView.deselectRow(at: indexPath, animated: false)
+    }
+}
+
+extension TweakRepository.NodeProviding {
+    func dequeueTableViewCell(in tableView: UITableView, indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "TweakTableViewCell", for: indexPath) as! TweakTableViewCell
+        cell.configure(with: coordinate, node: self)
+        return cell
     }
 }
 
@@ -118,54 +120,96 @@ extension TweakFeaturesViewController: UITableViewDataSource, UITableViewDelegat
 
 // swiftformat:disable opaqueGenericParameters
 
-private class ToggleTableViewCell: UITableViewCell {
-    func configure<T: Codable & Equatable>(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<T>) {
+protocol SelectableCell: UITableViewCell {
+    func didSelect()
+}
+
+private class TweakTableViewCell: UITableViewCell, SelectableCell {
+    var updateBlock: () -> Void = {}
+    var onSelect: () -> Void = {}
+
+    func configure<Output: TweakOutputType>(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<Output>) {
         textLabel?.text = coordinate.row
+        selectionStyle = .none
+
+        switch node.tweakType {
+        case let .toggle(offValue, onValue, toggleDefault):
+            configureToggle(
+                offValue: offValue,
+                onValue: onValue,
+                toggleDefault: toggleDefault,
+                node: node
+            )
+        case let .freeform(fromString, toString, defaultValue):
+            configureFreeform(
+                fromString: fromString,
+                toString: toString,
+                defaultValue: defaultValue,
+                node: node
+            )
+        case let .selection(options, required, defaultIndex):
+            configureSelection(
+                options: options.map { ("\($0)", $0) },
+                required: required,
+                defaultIndex: defaultIndex,
+                node: node
+            )
+        case let .namedSelection(options, required, defaultIndex):
+            configureSelection(
+                options: options,
+                required: required,
+                defaultIndex: defaultIndex,
+                node: node
+            )
+        }
+    }
+
+    private func configureToggle<Output: TweakOutputType>(
+        offValue: Output,
+        onValue: Output,
+        toggleDefault: Bool,
+        node: any TweakRepository.NodeProviding<Output>
+    ) {
+        let persistentProperty = node.persistentProperty
+        let currentTweakState = persistentProperty.value
 
         let switchView = UISwitch()
-        let tweakState = node.persistentProperty.value
-        if case let .toggle(_, onValue, defaultValue) = node.tweakType {
-            let curToggle = tweakState.enabled ? (tweakState.value == onValue) : defaultValue
-            switchView.isOn = curToggle
+        switchView.addTarget(self, action: #selector(toggleValue), for: .valueChanged)
+
+        let curToggle = currentTweakState.enabled ? (currentTweakState.value == onValue) : toggleDefault
+        switchView.isOn = curToggle
+        updateBlock = {
+            node.persistentProperty.value = TweakState(value: switchView.isOn ? onValue : offValue, enabled: true)
         }
+        onSelect = { [unowned self] in
+            switchView.setOn(!switchView.isOn, animated: true)
+            updateBlock()
+        }
+
         accessoryView = switchView
     }
-}
 
-private class FreeformTableViewCell: UITableViewCell {
-    func configure<T>(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<T>) {
-        textLabel?.text = coordinate.row
-        detailTextLabel?.text = "Freeform"
+    private func configureFreeform<Output: TweakOutputType>(
+        fromString: (String) -> Output,
+        toString: (Output) -> String?,
+        defaultValue: Output,
+        node: any TweakRepository.NodeProviding<Output>
+    ) {}
+
+    private func configureSelection<Output: TweakOutputType>(
+        options: [(String, Output)],
+        required: Bool,
+        defaultIndex: Int?,
+        node: any TweakRepository.NodeProviding<Output>
+    ) {}
+
+    @objc func toggleValue(switch: UISwitch) {
+        updateBlock()
     }
-}
 
-private class SelectionTableViewCell: UITableViewCell {
-    func configure<T>(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<T>) {
-        textLabel?.text = coordinate.row
-        detailTextLabel?.text = "Selection"
+    func didSelect() {
+        onSelect()
     }
 }
 
 // swiftformat:enable opaqueGenericParameters
-
-extension TweakRepository.NodeProviding {
-    func dequeueTableViewCell(in tableView: UITableView, indexPath: IndexPath) -> UITableViewCell {
-        // Create appropriate cell based on tweak type
-        switch tweakType {
-        case .toggle:
-            let cell = tableView.dequeueReusableCell(withIdentifier: "ToggleCell", for: indexPath) as! ToggleTableViewCell
-            cell.configure(with: coordinate, node: self)
-            return cell
-
-        case .freeform:
-            let cell = tableView.dequeueReusableCell(withIdentifier: "FreeformCell", for: indexPath) as! FreeformTableViewCell
-            cell.configure(with: coordinate, node: self)
-            return cell
-
-        case .selection, .namedSelection, .segment:
-            let cell = tableView.dequeueReusableCell(withIdentifier: "SelectionCell", for: indexPath) as! SelectionTableViewCell
-            cell.configure(with: coordinate, node: self)
-            return cell
-        }
-    }
-}

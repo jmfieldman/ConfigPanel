@@ -36,7 +36,7 @@ public final class FeatureOneConfigSubContainerImpl: FeatureOneConfigSubContaine
 
     public let configToggle: any PropertyProtocol<Bool> = ConfigItem<Bool, ConfigInput>(
         default: false,
-        tweak: Tweak(coordinate: .init(.featureOne, .sectionTwo, "Toggle"), type: .boolToggle(default: false))
+        tweak: Tweak(coordinate: .init(.featureOne, .sectionTwo, "Toggle"), type: .boolToggle())
     )
 }
 
@@ -49,13 +49,13 @@ public final class FeatureOneConfigManagerImpl: FeatureOneConfigManager, ConfigC
 
     public let configIsOdd: any PropertyProtocol<Bool> = ConfigItem<Bool, ConfigInput>(
         default: true,
-        tweak: Tweak(coordinate: .init(.featureOne, .sectionOne, "is odd"), type: .boolToggle(default: false)),
+        tweak: Tweak(coordinate: .init(.featureOne, .sectionOne, "is odd"), type: .boolToggle()),
         config: { $0.integer % 2 != 0 }
     )
 
     public let configIsEven: any PropertyProtocol<Bool> = ConfigItem<Bool, ConfigInput>(
         default: true,
-        tweak: Tweak(coordinate: .init(.featureOne, .sectionOne, "is even"), type: .boolToggle(default: false)),
+        tweak: Tweak(coordinate: .init(.featureOne, .sectionOne, "is even"), type: .boolToggle()),
         config: { $0.integer % 2 == 0 }
     )
 
