@@ -106,6 +106,10 @@ extension TweakFeaturesViewController: UITableViewDataSource, UITableViewDelegat
         }
         tableView.deselectRow(at: indexPath, animated: false)
     }
+
+    public func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        UIApplication.shared.sendAction(#selector(UIView.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
 }
 
 extension TweakRepository.NodeProviding {
@@ -124,7 +128,7 @@ protocol SelectableCell: UITableViewCell {
     func didSelect()
 }
 
-private class TweakTableViewCell: UITableViewCell, SelectableCell {
+private class TweakTableViewCell: UITableViewCell, SelectableCell, UITextFieldDelegate {
     var updateBlock: () -> Void = {}
     var onSelect: () -> Void = {}
 
@@ -179,6 +183,7 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell {
         let curToggle = currentTweakState.enabled ? (currentTweakState.value == onValue) : toggleDefault
         switchView.isOn = curToggle
         updateBlock = {
+            UIApplication.shared.sendAction(#selector(UIView.resignFirstResponder), to: nil, from: nil, for: nil)
             node.persistentProperty.value = TweakState(value: switchView.isOn ? onValue : offValue, enabled: true)
         }
         onSelect = { [unowned self] in
@@ -190,11 +195,61 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell {
     }
 
     private func configureFreeform<Output: TweakOutputType>(
-        fromString: (String) -> Output,
+        fromString: @escaping (String) -> Output,
         toString: (Output) -> String?,
         defaultValue: Output,
         node: any TweakRepository.NodeProviding<Output>
-    ) {}
+    ) {
+        let persistentProperty = node.persistentProperty
+        let currentTweakState = persistentProperty.value
+
+        let textField = UITextField()
+        textField.borderStyle = .none
+        textField.placeholder = toString(defaultValue) ?? "No Override"
+        textField.textAlignment = .right
+        textField.returnKeyType = .done
+
+        // Set initial text based on current state
+        if currentTweakState.enabled {
+            textField.text = toString(currentTweakState.value)
+        } else {
+            textField.text = nil
+        }
+
+        textField.sizeToFit()
+        if textField.bounds.size.width < 44 {
+            textField.bounds = CGRect(x: 0, y: 0, width: 44, height: textField.bounds.size.height)
+        }
+
+        // Update the tweak value when text changes
+        let updateTweakValue: (String) -> Void = { text in
+            if text.isEmpty {
+                persistentProperty.value = TweakState(value: defaultValue, enabled: false)
+            } else {
+                persistentProperty.value = TweakState(value: fromString(text), enabled: true)
+            }
+        }
+
+        // Handle text changes
+        textField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)
+
+        // Handle return key to dismiss keyboard
+        textField.delegate = self
+
+        updateBlock = {
+            updateTweakValue(textField.text ?? "")
+            textField.sizeToFit()
+            if textField.bounds.size.width < 44 {
+                textField.bounds = CGRect(x: 0, y: 0, width: 44, height: textField.bounds.size.height)
+            }
+        }
+
+        onSelect = {
+            textField.becomeFirstResponder()
+        }
+
+        accessoryView = textField
+    }
 
     private func configureSelection<Output: TweakOutputType>(
         options: [(String, Output)],
@@ -245,9 +300,11 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell {
         let menu = UIMenu(options: UIMenu.Options.singleSelection, children: actions)
         selectionButton.menu = menu
         selectionButton.showsMenuAsPrimaryAction = true
+        selectionButton.addTarget(self, action: #selector(menuAction), for: .menuActionTriggered)
 
         updateBlock = {}
         onSelect = {
+            UIApplication.shared.sendAction(#selector(UIView.resignFirstResponder), to: nil, from: nil, for: nil)
             selectionButton.gestureRecognizers?.forEach {
                 $0.touchesBegan([], with: UIEvent())
             }
@@ -258,6 +315,19 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell {
 
     @objc func toggleValue(switch: UISwitch) {
         updateBlock()
+    }
+
+    @objc func menuAction() {
+        UIApplication.shared.sendAction(#selector(UIView.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+
+    @objc func textDidChange(textField: UITextField) {
+        updateBlock()
+    }
+
+    @objc func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        UIApplication.shared.sendAction(#selector(UIView.resignFirstResponder), to: nil, from: nil, for: nil)
+        return true
     }
 
     func didSelect() {

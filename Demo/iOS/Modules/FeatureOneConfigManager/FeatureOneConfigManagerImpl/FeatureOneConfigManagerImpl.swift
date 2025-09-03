@@ -30,7 +30,7 @@ public final class FeatureOneConfigSubContainerImpl: FeatureOneConfigSubContaine
 
     public let configStringThreed: any PropertyProtocol<String> = ConfigItem<String, ConfigInput>(
         default: "000",
-        tweak: Tweak(coordinate: .init(.featureOne, .sectionTwo, "Threes"), type: .freeformString()),
+        tweak: Tweak(coordinate: .init(.featureOne, .sectionTwo, "Threed"), type: .freeformString()),
         config: { "\($0.string)\($0.string)\($0.string)" }
     )
 

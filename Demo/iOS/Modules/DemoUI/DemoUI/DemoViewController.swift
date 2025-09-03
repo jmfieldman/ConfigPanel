@@ -35,6 +35,10 @@ public final class DemoViewController: UIViewController {
                 }
 
                 UILabel {
+                    $0.bind(\.text) <~ model.featureOneThreed.map { "Threed: \($0)" }
+                }
+
+                UILabel {
                     $0.bind(\.text) <~ model.featureOneIsOdd.map { "Is Odd: \($0)" }
                 }
 
@@ -101,6 +105,7 @@ private final class DemoViewControllerModel {
     }
 
     lazy var featureOneToggle: Property<Bool> = Property(featureOneConfigManager.subContainer.configToggle)
+    lazy var featureOneThreed: Property<String> = Property(featureOneConfigManager.subContainer.configStringThreed)
     lazy var featureOneIsOdd: Property<Bool> = Property(featureOneConfigManager.configIsOdd)
     lazy var featureOneIsEven: Property<Bool> = Property(featureOneConfigManager.configIsEven)
     lazy var featureTwoInteger: Property<Int> = Property(featureTwoConfigManager.configInteger)
