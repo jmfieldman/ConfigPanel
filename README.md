@@ -29,7 +29,7 @@ Manages all registered tweaks and provides persistent storage using `PersistentP
 ### ConfigItem
 A wrapper that combines both tweak configuration and external config inputs (like server-side configurations) into a single reactive property.
 
-### TweakFeaturesViewController
+### TweakViewController
 A UIKit view controller that displays all tweaks organized by table and section, with built-in reset functionality.
 
 ## Usage Example
