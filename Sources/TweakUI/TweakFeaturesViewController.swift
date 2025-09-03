@@ -5,6 +5,7 @@
 
 import UIKit
 
+/// A view controller that displays tweaks organized by table and section
 public final class TweakFeaturesViewController: UIViewController {
     private let tableCoordinate: TweakCoordinate.Table
     private var tableView: UITableView!
@@ -13,6 +14,8 @@ public final class TweakFeaturesViewController: UIViewController {
     private var sections: [TweakCoordinate.Section: [TweakCoordinate]] = [:]
     private var sortedSections: [TweakCoordinate.Section] = []
 
+    /// Initializes a new tweak features view controller with the specified table coordinate
+    /// - Parameter tableCoordinate: The table coordinate to display tweaks for
     public init(tableCoordinate: TweakCoordinate.Table) {
         self.tableCoordinate = tableCoordinate
         super.init(nibName: nil, bundle: nil)
@@ -29,6 +32,7 @@ public final class TweakFeaturesViewController: UIViewController {
         loadTweaks()
     }
 
+    /// Sets up the UI components for this view controller
     private func setupUI() {
         title = tableCoordinate.table
         tableView = UITableView(frame: view.bounds, style: .grouped)
@@ -40,6 +44,7 @@ public final class TweakFeaturesViewController: UIViewController {
         view.addSubview(tableView)
     }
 
+    /// Loads and organizes tweaks for display
     private func loadTweaks() {
         // Filter and group coordinates by section
         let tableCoordinates = TweakRepository.shared.allCoordinates()
@@ -55,35 +60,27 @@ public final class TweakFeaturesViewController: UIViewController {
     }
 }
 
+// MARK: - Table View Data Source and Delegate
+
 extension TweakFeaturesViewController: UITableViewDataSource, UITableViewDelegate {
     public func numberOfSections(in tableView: UITableView) -> Int {
         sections.count
     }
 
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard section < sortedSections.count else { return 0 }
-        let currentSection = sortedSections[section]
+        guard let currentSection = sectionForIndex(section) else { return 0 }
         return sections[currentSection]?.count ?? 0
     }
 
     public func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        guard section < sortedSections.count else { return nil }
-        return sortedSections[section].section
+        guard let currentSection = sectionForIndex(section) else { return nil }
+        return currentSection.section
     }
 
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard indexPath.section < sortedSections.count else {
+        guard let coordinate = coordinateForIndexPath(indexPath) else {
             return UITableViewCell()
         }
-
-        let currentSection = sortedSections[indexPath.section]
-        guard let sectionRows = sections[currentSection],
-              indexPath.row < sectionRows.count
-        else {
-            return UITableViewCell()
-        }
-
-        let coordinate = sectionRows[indexPath.row]
 
         // Get the node for this tweak
         guard let node = TweakRepository.shared.node(for: coordinate) else {
@@ -103,11 +100,32 @@ extension TweakFeaturesViewController: UITableViewDataSource, UITableViewDelegat
     public func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         UIApplication.shared.sendAction(#selector(UIView.resignFirstResponder), to: nil, from: nil, for: nil)
     }
+
+    // MARK: - Helper Methods
+
+    /// Gets the section at a given index, if it exists
+    private func sectionForIndex(_ index: Int) -> TweakCoordinate.Section? {
+        guard index < sortedSections.count else { return nil }
+        return sortedSections[index]
+    }
+
+    /// Gets the tweak coordinate for a given index path, if it exists
+    private func coordinateForIndexPath(_ indexPath: IndexPath) -> TweakCoordinate? {
+        guard let currentSection = sectionForIndex(indexPath.section) else { return nil }
+        guard let sectionRows = sections[currentSection],
+              indexPath.row < sectionRows.count
+        else {
+            return nil
+        }
+
+        return sectionRows[indexPath.row]
+    }
 }
 
 // MARK: - Node Extension
 
 extension TweakRepository.NodeProviding {
+    /// Dequeues and configures a table view cell for this node
     func dequeueTableViewCell(in tableView: UITableView, indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TweakTableViewCell", for: indexPath) as! TweakTableViewCell
         cell.configure(with: coordinate, node: self)
@@ -119,14 +137,17 @@ extension TweakRepository.NodeProviding {
 
 // swiftformat:disable opaqueGenericParameters
 
+/// Protocol for cells that can be selected
 protocol SelectableCell: UITableViewCell {
     func didSelect()
 }
 
+/// Custom table view cell for displaying tweak controls
 private class TweakTableViewCell: UITableViewCell, SelectableCell, UITextFieldDelegate {
     var updateBlock: () -> Void = {}
     var onSelect: () -> Void = {}
 
+    /// Configures the cell with a tweak coordinate and node
     func configure<Output: TweakOutputType>(with coordinate: TweakCoordinate, node: any TweakRepository.NodeProviding<Output>) {
         textLabel?.text = coordinate.row
         selectionStyle = .none
@@ -163,6 +184,7 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell, UITextFieldDe
         }
     }
 
+    /// Configures a toggle control for the tweak
     private func configureToggle<Output: TweakOutputType>(
         offValue: Output,
         onValue: Output,
@@ -187,6 +209,7 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell, UITextFieldDe
         accessoryView = switchView
     }
 
+    /// Configures a freeform text input control for the tweak
     private func configureFreeform<Output: TweakOutputType>(
         fromString: @escaping (String) -> Output,
         toString: (Output) -> String?,
@@ -234,6 +257,7 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell, UITextFieldDe
         accessoryView = textField
     }
 
+    /// Configures a selection control for the tweak
     private func configureSelection<Output: TweakOutputType>(
         options: [(String, Output)],
         required: Bool,
