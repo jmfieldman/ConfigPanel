@@ -41,22 +41,15 @@ public final class TweakFeaturesViewController: UIViewController {
     }
 
     private func loadTweaks() {
-        // Filter coordinates by table
-        let tableCoordinates = TweakRepository.shared.allCoordinates().filter { $0.table == tableCoordinate }
+        // Filter and group coordinates by section
+        let tableCoordinates = TweakRepository.shared.allCoordinates()
+            .filter { $0.table == tableCoordinate }
+            .sorted { $0.section.section < $1.section.section }
 
-        // Group by section
-        for coordinate in tableCoordinates {
-            if sections[coordinate.section] == nil {
-                sections[coordinate.section] = []
-            }
-            sections[coordinate.section]?.append(coordinate)
-        }
+        sections = Dictionary(grouping: tableCoordinates) { $0.section }
+            .mapValues { $0.sorted { $0.row < $1.row } }
 
-        // Sort sections and rows
         sortedSections = sections.keys.sorted { $0.section < $1.section }
-        for section in sortedSections {
-            sections[section]?.sort { $0.row < $1.row }
-        }
 
         tableView.reloadData()
     }
@@ -111,6 +104,8 @@ extension TweakFeaturesViewController: UITableViewDataSource, UITableViewDelegat
         UIApplication.shared.sendAction(#selector(UIView.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
+
+// MARK: - Node Extension
 
 extension TweakRepository.NodeProviding {
     func dequeueTableViewCell(in tableView: UITableView, indexPath: IndexPath) -> UITableViewCell {
@@ -179,9 +174,7 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell, UITextFieldDe
 
         let switchView = UISwitch()
         switchView.addTarget(self, action: #selector(toggleValue), for: .valueChanged)
-
-        let curToggle = currentTweakState.enabled ? (currentTweakState.value == onValue) : toggleDefault
-        switchView.isOn = curToggle
+        switchView.isOn = currentTweakState.enabled ? (currentTweakState.value == onValue) : toggleDefault
         updateBlock = {
             UIApplication.shared.sendAction(#selector(UIView.resignFirstResponder), to: nil, from: nil, for: nil)
             node.persistentProperty.value = TweakState(value: switchView.isOn ? onValue : offValue, enabled: true)
@@ -208,14 +201,7 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell, UITextFieldDe
         textField.placeholder = toString(defaultValue) ?? "No Override"
         textField.textAlignment = .right
         textField.returnKeyType = .done
-
-        // Set initial text based on current state
-        if currentTweakState.enabled {
-            textField.text = toString(currentTweakState.value)
-        } else {
-            textField.text = nil
-        }
-
+        textField.text = currentTweakState.enabled ? toString(currentTweakState.value) : nil
         textField.sizeToFit()
         if textField.bounds.size.width < 44 {
             textField.bounds = CGRect(x: 0, y: 0, width: 44, height: textField.bounds.size.height)
@@ -230,10 +216,7 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell, UITextFieldDe
             }
         }
 
-        // Handle text changes
         textField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)
-
-        // Handle return key to dismiss keyboard
         textField.delegate = self
 
         updateBlock = {
