@@ -3,7 +3,7 @@
 //  Copyright © 2025 Jason Fieldman.
 //
 
-public enum TweakType<Output: Codable> {
+public enum TweakType<Output: TweakOutputType> {
     case toggle(
         off: Output,
         on: Output,
@@ -52,6 +52,13 @@ public enum TweakType<Output: Codable> {
         case let .namedSelection(_, required, _):
             !required
         }
+    }
+
+    func defaultState() -> TweakState<Output> {
+        TweakState(
+            value: defaultValue(),
+            enabled: !hasDisableState()
+        )
     }
 }
 

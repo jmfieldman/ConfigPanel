@@ -24,6 +24,7 @@ final class TweakRepository {
         var tweakType: TweakType<Output> { get }
         var persistentProperty: PersistentProperty<TweakState<Output>> { get }
         var outputIdentifier: ObjectIdentifier { get }
+        func reset()
     }
 
     final class Node<Output: TweakOutputType>: NodeProviding {
@@ -41,11 +42,16 @@ final class TweakRepository {
             self.persistentProperty = PersistentProperty(
                 environment: TweakRepository.propertyEnvironment,
                 key: coordinate.propertyKey,
-                defaultValue: TweakState(
-                    value: tweakType.defaultValue(),
-                    enabled: !tweakType.hasDisableState()
-                )
+                defaultValue: tweakType.defaultState()
             )
+        }
+
+        func reset() {
+            persistentProperty.modify {
+                if $0 != tweakType.defaultState() {
+                    $0 = tweakType.defaultState()
+                }
+            }
         }
     }
 
@@ -55,6 +61,14 @@ final class TweakRepository {
 
     func node(for coordinate: TweakCoordinate) -> (any NodeProviding)? {
         accessQueue.sync { self.nodes[coordinate] }
+    }
+
+    /// Resets all tweaks in the specified table. If the parameter is nil it will
+    /// reset all tweaks.
+    func reset(table: TweakCoordinate.Table? = nil) {
+        allCoordinates()
+            .filter { coord in table.flatMap { $0 == coord.table } ?? true }
+            .forEach { node(for: $0)?.reset() }
     }
 
     func register<Output: TweakOutputType>(

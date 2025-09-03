@@ -42,6 +42,29 @@ public final class TweakFeaturesViewController: UIViewController {
         tableView.register(TweakTableViewCell.self, forCellReuseIdentifier: "TweakTableViewCell")
 
         view.addSubview(tableView)
+
+        let menuButton = UIBarButtonItem(
+            image: UIImage(systemName: "gearshape.2.fill"),
+            style: .plain,
+            target: nil,
+            action: nil
+        )
+        menuButton.menu = UIMenu(children: [
+            UIAction(title: "Reset \(tableCoordinate.table) Tweaks", image: UIImage(systemName: "arrow.clockwise")) { [unowned self] _ in
+                let alert = UIAlertController(
+                    title: "Reset \(tableCoordinate.table) Tweaks",
+                    message: "Are you sure you want to reset all \(tableCoordinate.table) tweaks?",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+                alert.addAction(UIAlertAction(title: "Reset", style: .destructive) { [unowned self] _ in
+                    TweakRepository.shared.reset(table: tableCoordinate)
+                    loadTweaks()
+                })
+                present(alert, animated: true)
+            },
+        ])
+        navigationItem.rightBarButtonItem = menuButton
     }
 
     /// Loads and organizes tweaks for display

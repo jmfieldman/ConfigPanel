@@ -3,7 +3,7 @@
 //  Copyright © 2025 Jason Fieldman.
 //
 
-struct TweakState<Output: Codable>: Codable {
+struct TweakState<Output: TweakOutputType>: Codable, Equatable {
     let value: Output
     let enabled: Bool
 }
