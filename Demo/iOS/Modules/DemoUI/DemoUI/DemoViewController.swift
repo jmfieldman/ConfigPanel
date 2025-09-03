@@ -17,7 +17,7 @@ public final class DemoViewController: UIViewController {
 
     override public func loadView() {
         view = UIContainer {
-            $0.backgroundColor = .white
+            $0.backgroundColor = .systemBackground
 
             UIVStack {
                 $0.alignment = .center
@@ -32,6 +32,14 @@ public final class DemoViewController: UIViewController {
 
                 UILabel {
                     $0.bind(\.text) <~ model.featureOneToggle.map { "Toggle Tweak: \($0)" }
+                }
+
+                UILabel {
+                    $0.bind(\.text) <~ model.featureOneIsOdd.map { "Is Odd: \($0)" }
+                }
+
+                UILabel {
+                    $0.bind(\.text) <~ model.featureOneIsEven.map { "Is Even: \($0)" }
                 }
 
                 UILabel {
@@ -93,6 +101,8 @@ private final class DemoViewControllerModel {
     }
 
     lazy var featureOneToggle: Property<Bool> = Property(featureOneConfigManager.subContainer.configToggle)
+    lazy var featureOneIsOdd: Property<Bool> = Property(featureOneConfigManager.configIsOdd)
+    lazy var featureOneIsEven: Property<Bool> = Property(featureOneConfigManager.configIsEven)
     lazy var featureTwoInteger: Property<Int> = Property(featureTwoConfigManager.configInteger)
     lazy var featureTwoString: Property<String> = Property(featureTwoConfigManager.configString)
 }

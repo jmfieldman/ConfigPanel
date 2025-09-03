@@ -201,7 +201,60 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell {
         required: Bool,
         defaultIndex: Int?,
         node: any TweakRepository.NodeProviding<Output>
-    ) {}
+    ) {
+        let stringForValue: (Output) -> String? = { value in
+            options.first(where: { $1 == value })?.0
+        }
+
+        let stringForState: (TweakState<Output>) -> String? = { state in
+            guard state.enabled else { return "No Override" }
+            if let valueString = stringForValue(state.value) {
+                return valueString
+            } else {
+                return "\(state.value)"
+            }
+        }
+
+        let persistentProperty = node.persistentProperty
+        let currentTweakState = persistentProperty.value
+
+        let selectionButton = UIButton()
+        selectionButton.setTitle(stringForState(currentTweakState), for: .normal)
+        selectionButton.sizeToFit()
+
+        let setTweakState: (TweakState<Output>) -> Void = { state in
+            selectionButton.setTitle(stringForState(state), for: .normal)
+            selectionButton.sizeToFit()
+            persistentProperty.value = state
+        }
+
+        var actions: [UIAction] = []
+
+        if !required {
+            actions.append(UIAction(title: "No Override", identifier: nil) { _ in
+                setTweakState(.init(value: currentTweakState.value, enabled: false))
+            })
+        }
+
+        actions.append(contentsOf: options.map { option in
+            UIAction(title: option.0, identifier: nil) { _ in
+                setTweakState(.init(value: option.1, enabled: true))
+            }
+        })
+
+        let menu = UIMenu(options: UIMenu.Options.singleSelection, children: actions)
+        selectionButton.menu = menu
+        selectionButton.showsMenuAsPrimaryAction = true
+
+        updateBlock = {}
+        onSelect = {
+            selectionButton.gestureRecognizers?.forEach {
+                $0.touchesBegan([], with: UIEvent())
+            }
+        }
+
+        accessoryView = selectionButton
+    }
 
     @objc func toggleValue(switch: UISwitch) {
         updateBlock()

@@ -60,6 +60,17 @@ public extension TweakType {
         .toggle(off: false, on: true, toggleDefaultOn: defaultOn)
     }
 
+    static func tristateBool() -> TweakType<Bool> {
+        .namedSelection(
+            options: [
+                ("True", true),
+                ("False", false),
+            ],
+            required: false,
+            defaultIndex: nil
+        )
+    }
+
     static func freeformString(default: String = "") -> TweakType<String> {
         .freeform(fromString: { $0 }, toString: { $0 }, default: `default`)
     }
