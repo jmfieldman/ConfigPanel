@@ -95,6 +95,23 @@ protocol Configs {
 }
 ```
 
+In your implementation modules, you should have a `ConfigContainer` that holds some number of `ConfigItem`, and may also contain nested containers. 
+
+You then use the method `registerConfigProperty` on the container to inject the argument (a `PropertyProtocol<ConfigItem>`) into all child/sub-child `ConfigItem` instances.
+
+Note that ConfigItem will subscribe to the external config lazily -- i.e. it will not execute its external config resolution block until it is subscribed to. This ensures that any exposure mechanisms in your resolution block do not fire until the config is actually used.
+
+```swift
+class MyContainer: ConfigContainer {
+    init() {
+        registerConfigProperty(someExternalConfigProperty)
+    }
+
+    let config1 = ConfigItem(...)
+    let config2 = ConfigItem(...)
+    let configSubcontainer = MySubContainer()
+}
+```
 
 ## UI Integration
 
