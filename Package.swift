@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "ConfigPanel", targets: ["ConfigPanel"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/jmfieldman/CombineEx.git", from: "0.0.24"),
+        .package(url: "https://github.com/jmfieldman/CombineEx.git", from: "0.0.33"),
     ],
     targets: [
         .target(

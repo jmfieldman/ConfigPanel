@@ -10,7 +10,7 @@ import Foundation
 final class TweakRepository {
     static let shared = TweakRepository()
 
-    private static let propertyEnvironment = FileBasedPersistentPropertyEnvironment(
+    private static let propertyEnvironment = FileBasedPersistentPropertyStorageEngine(
         environmentId: "_tweaks_",
         rootDirectory: .documents
     )
@@ -40,7 +40,7 @@ final class TweakRepository {
             self.coordinate = coordinate
             self.tweakType = tweakType
             self.persistentProperty = PersistentProperty(
-                environment: TweakRepository.propertyEnvironment,
+                storageEngine: TweakRepository.propertyEnvironment,
                 key: coordinate.propertyKey,
                 defaultValue: tweakType.defaultState()
             )
