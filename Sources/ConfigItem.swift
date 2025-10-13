@@ -6,21 +6,48 @@
 import CombineEx
 import Foundation
 
+public struct ConfigItemDynamicResolution<Output: TweakOutputType>: Equatable, Sendable {
+    public enum `Type`: String, Equatable, Sendable {
+        case `default`
+        case tweak
+        case config
+    }
+
+    public let type: `Type`
+    public let value: Output
+
+    public init(type: Type, value: Output) {
+        self.type = type
+        self.value = value
+    }
+}
+
 public protocol ConfigProviding<Output>: PropertyProtocol {
     associatedtype Output
 }
 
 protocol ConfigInputIngesting<ConfigInput> {
     associatedtype ConfigInput
-    func registerConfigItemProperty(_ configProperty: any PropertyProtocol<ConfigInput?>)
+    func registerConfigItemProperty(
+        itemName: String,
+        parentPath: String,
+        fullPath: String,
+        configProperty: any PropertyProtocol<ConfigInput?>
+    )
 }
 
 public final class ConfigItem<Output: TweakOutputType, ConfigInput>: ConfigProviding, ConfigInputIngesting {
-    private var internalProperty: LazyContainer<Property<Output>>?
+    private var internalProperty: LazyContainer<Property<ConfigItemDynamicResolution<Output>>>?
+    private var internalValueMap: LazyContainer<Property<Output>>?
+
     private let defaultValue: Output
     private let tweak: Tweak<Output>?
     private let config: ((ConfigInput) -> Output?)?
     private var configProperty: (any PropertyProtocol<ConfigInput?>)?
+
+    public var itemName: String!
+    public var parentPath: String!
+    public var fullPath: String!
 
     public init(
         default: Output,
@@ -33,47 +60,51 @@ public final class ConfigItem<Output: TweakOutputType, ConfigInput>: ConfigProvi
         self.internalProperty = LazyContainer { [unowned self] in
             makeInternalProperty()
         }
+        self.internalValueMap = LazyContainer { [unowned self] in
+            internalProperty!.target.map(\.value)
+        }
     }
 
-    func registerConfigItemProperty(_ configProperty: any PropertyProtocol<ConfigInput?>) {
+    func registerConfigItemProperty(
+        itemName: String,
+        parentPath: String,
+        fullPath: String,
+        configProperty: any PropertyProtocol<ConfigInput?>
+    ) {
+        self.itemName = itemName
+        self.parentPath = parentPath
+        self.fullPath = fullPath
         self.configProperty = configProperty
     }
 
-    fileprivate static func evaluate(
-        defaultValue: Output,
-        tweakState: TweakState<Output>?,
-        config: ((ConfigInput) -> Output?)?,
-        configInput: ConfigInput?
-    ) -> Output {
-        if let tweakState, tweakState.enabled {
-            return tweakState.value
+    /// Returns the immediate value -- returns nil if the value has not been exposed/read
+    /// by the user yet.
+    public var exposedResolution: ConfigItemDynamicResolution<Output>? {
+        guard internalProperty!.resolved != nil else {
+            return nil
         }
 
-        if let configInput, let resolution = config?(configInput) {
-            return resolution
-        }
-
-        return defaultValue
+        return internalProperty!.target.value
     }
 
-    fileprivate func makeInternalProperty() -> Property<Output> {
+    fileprivate func makeInternalProperty() -> Property<ConfigItemDynamicResolution<Output>> {
         guard let configProperty else {
             fatalError("Cannot call makeInternalProperty before registering the config property")
         }
 
-        return Property<Output>.combineLatest(
+        return Property<ConfigItemDynamicResolution<Output>>.combineLatest(
             tweak?.internalProperty.map(\.self) ?? Property(value: TweakState(value: defaultValue, enabled: false)),
             configProperty
-        ).map { [config, defaultValue] tweakState, configInput -> Output in
+        ).map { [config, defaultValue] tweakState, configInput -> ConfigItemDynamicResolution<Output> in
             if tweakState.enabled {
-                return tweakState.value
+                return ConfigItemDynamicResolution(type: .tweak, value: tweakState.value)
             }
 
             if let configInput, let resolution = config?(configInput) {
-                return resolution
+                return ConfigItemDynamicResolution(type: .config, value: resolution)
             }
 
-            return defaultValue
+            return ConfigItemDynamicResolution(type: .default, value: defaultValue)
         }.removeDuplicates()
     }
 }
@@ -82,11 +113,11 @@ public final class ConfigItem<Output: TweakOutputType, ConfigInput>: ConfigProvi
 
 public extension ConfigItem {
     var value: Output {
-        internalProperty!.target.value
+        internalValueMap!.target.value
     }
 
     func receive<S>(subscriber: S) where S: Subscriber, Never == S.Failure, Output == S.Input {
-        internalProperty!.target.receive(subscriber: subscriber)
+        internalValueMap!.target.receive(subscriber: subscriber)
     }
 }
 
