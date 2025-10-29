@@ -64,6 +64,7 @@ extension TweakViewController: UITableViewDataSource, UITableViewDelegate {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TweakCell", for: indexPath)
         let tableCoordinate = tableCoordinates[indexPath.row]
         cell.textLabel?.text = tableCoordinate.table
+        cell.accessoryType = .disclosureIndicator
         return cell
     }
 
