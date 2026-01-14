@@ -305,6 +305,7 @@ private class TweakTableViewCell: UITableViewCell, SelectableCell, UITextFieldDe
 
         let selectionButton = UIButton()
         selectionButton.setTitle(stringForState(currentTweakState), for: .normal)
+        selectionButton.setTitleColor(.label, for: .normal)
         selectionButton.sizeToFit()
 
         let setTweakState: (TweakState<Output>) -> Void = { state in
